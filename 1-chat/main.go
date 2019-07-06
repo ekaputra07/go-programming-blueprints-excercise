@@ -4,6 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+
+	"github.com/ekaputra07/goblueprints-excercise/tracer"
 )
 
 const (
@@ -13,6 +16,8 @@ const (
 
 func main() {
 	r := newRoom()
+	r.tracer = tracer.New(os.Stdout)
+
 	http.Handle("/", renderTemplate("index.html"))
 	http.Handle("/room", r)
 

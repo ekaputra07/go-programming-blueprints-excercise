@@ -1,9 +1,11 @@
 package main
 
 import (
-	"github.com/gorilla/websocket"
 	"log"
 	"net/http"
+
+	"github.com/ekaputra07/goblueprints-excercise/tracer"
+	"github.com/gorilla/websocket"
 )
 
 const (
@@ -18,6 +20,7 @@ type room struct {
 	join    chan *client
 	leave   chan *client
 	clients map[*client]bool
+	tracer  tracer.Tracer
 }
 
 func (r *room) run() {
@@ -26,12 +29,15 @@ func (r *room) run() {
 		case client := <-r.join:
 			// joining client
 			r.clients[client] = true
+			r.tracer.Trace("A client joined the room")
 		case client := <-r.leave:
 			// leaving client
 			delete(r.clients, client)
 			close(client.send)
+			r.tracer.Trace("A client left the room")
 		case msg := <-r.forward:
 			// message received, forward to all clients
+			r.tracer.Trace("A message forwarded to all clients, msg: ", string(msg))
 			for client := range r.clients {
 				client.send <- msg
 			}
@@ -58,5 +64,6 @@ func newRoom() *room {
 		join:    make(chan *client),
 		leave:   make(chan *client),
 		clients: make(map[*client]bool),
+		tracer:  tracer.Off(),
 	}
 }
