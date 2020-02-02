@@ -45,19 +45,17 @@ func (r *room) run() {
 	}
 }
 
-func (r *room) start() http.HandlerFunc {
-	return func(w http.ResponseWriter, req *http.Request) {
-		socket, err := upgrader.Upgrade(w, req, nil)
-		if err != nil {
-			log.Fatal("room.ServeHTTP error: ", err)
-			return
-		}
-		client := newClient(socket, r)
-		defer func() { r.leave <- client }()
-
-		r.join <- client
-		client.start()
+func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	socket, err := upgrader.Upgrade(w, req, nil)
+	if err != nil {
+		log.Fatal("room.ServeHTTP error: ", err)
+		return
 	}
+	client := newClient(socket, r)
+	defer func() { r.leave <- client }()
+
+	r.join <- client
+	client.start()
 }
 
 func newRoom() *room {

@@ -33,7 +33,7 @@ func handleLogin() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
 		action := params["action"]
-		provider := params["provider"]
+		// provider := params["provider"]
 
 		switch action {
 		case "login":
