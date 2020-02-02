@@ -7,19 +7,13 @@ import (
 	"text/template"
 )
 
-type templateHandler struct {
-	once     sync.Once
-	filename string
-	template *template.Template
-}
-
-func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	t.once.Do(func() {
-		t.template = template.Must(template.ParseFiles(filepath.Join("templates", t.filename)))
+func render(filename string) http.HandlerFunc {
+	var tpl *template.Template
+	var once sync.Once
+	once.Do(func() {
+		tpl = template.Must(template.ParseFiles(filepath.Join("templates", filename)))
 	})
-	t.template.Execute(w, r) // we pass Request as the data so we can access Request data in template
-}
-
-func renderTemplate(filename string) *templateHandler {
-	return &templateHandler{filename: filename}
+	return func(w http.ResponseWriter, r *http.Request) {
+		tpl.Execute(w, r) // we pass Request as the data so we can access Request data in template
+	}
 }
