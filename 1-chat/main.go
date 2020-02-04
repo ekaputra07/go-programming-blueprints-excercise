@@ -8,6 +8,8 @@ import (
 
 	"github.com/ekaputra07/goblueprints-excercise/tracer"
 	"github.com/gorilla/mux"
+	"github.com/stretchr/gomniauth"
+	"github.com/stretchr/gomniauth/providers/github"
 )
 
 const (
@@ -16,6 +18,12 @@ const (
 )
 
 func main() {
+	// Setup gomniauth
+	gomniauth.SetSecurityKey("b53533b9-c113-461b-8944-ac9be26d12c5")
+	gomniauth.WithProviders(
+		github.New(os.Getenv("GITHUB_CLIENT_ID"), os.Getenv("GITHUB_CLIENT_SECRET"), "http://localhost:8080/auth/callback/github"),
+	)
+
 	r := newRoom()
 	r.tracer = tracer.New(os.Stdout)
 

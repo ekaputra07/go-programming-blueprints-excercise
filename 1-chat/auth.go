@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/stretchr/gomniauth"
 )
 
 func loginRequired(h http.HandlerFunc) http.HandlerFunc {
@@ -33,11 +34,24 @@ func handleLogin() http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		params := mux.Vars(r)
 		action := params["action"]
-		// provider := params["provider"]
+		provider := params["provider"]
 
 		switch action {
 		case "login":
-			log.Println("TODO: handle login action")
+			provider, err := gomniauth.Provider(provider)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			loginURL, err := provider.GetBeginAuthURL(nil, nil)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			w.Header().Add("Location", loginURL)
+			w.WriteHeader(http.StatusTemporaryRedirect)
+			return
+
 		case "callback":
 			log.Println("TODO: handle callback action")
 		default:
