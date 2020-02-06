@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 
 	"github.com/gorilla/mux"
 	"github.com/stretchr/gomniauth"
+	"github.com/stretchr/objx"
 )
 
 func loginRequired(h http.HandlerFunc) http.HandlerFunc {
@@ -50,10 +50,34 @@ func handleLogin() http.HandlerFunc {
 			}
 			w.Header().Add("Location", loginURL)
 			w.WriteHeader(http.StatusTemporaryRedirect)
-			return
 
 		case "callback":
-			log.Println("TODO: handle callback action")
+			provider, err := gomniauth.Provider(provider)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusBadRequest)
+				return
+			}
+			creds, err := provider.CompleteAuth(objx.MustFromURLQuery(r.URL.RawQuery))
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			user, err := provider.GetUser(creds)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			authCookieValue := objx.Map(map[string]interface{}{
+				"name": user.Name(),
+			}).MustBase64()
+			http.SetCookie(w, &http.Cookie{
+				Name:  "auth",
+				Value: authCookieValue,
+				Path:  "/",
+			})
+			w.Header().Add("Location", "/chat")
+			w.WriteHeader(http.StatusTemporaryRedirect)
+
 		default:
 			http.Error(w, fmt.Sprintf("Auth action %s not supported", action), http.StatusNotFound)
 		}

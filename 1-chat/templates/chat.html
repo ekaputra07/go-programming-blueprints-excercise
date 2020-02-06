@@ -16,6 +16,7 @@
 <body>
     <ul id="messages"></ul>
     <form id="chatbox">
+        {{.UserData.name}}:<br/>
         <textarea></textarea>
         <input type="submit" value="Send" />
     </form>
@@ -33,7 +34,7 @@
                 alert("Error: There is no socket connection.");
                 return false;
             }
-            socket.send(msgBox.val());
+            socket.send("{{.UserData.name}} > " + msgBox.val());
             msgBox.val("");
             return false;
         });
