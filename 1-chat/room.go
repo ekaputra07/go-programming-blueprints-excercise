@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/stretchr/objx"
+
 	"github.com/ekaputra07/goblueprints-excercise/tracer"
 	"github.com/gorilla/websocket"
 )
@@ -16,7 +18,7 @@ const (
 var upgrader = &websocket.Upgrader{ReadBufferSize: socketBufferSize, WriteBufferSize: socketBufferSize}
 
 type room struct {
-	forward chan []byte
+	forward chan *message
 	join    chan *client
 	leave   chan *client
 	clients map[*client]bool
@@ -29,15 +31,15 @@ func (r *room) run() {
 		case client := <-r.join:
 			// joining client
 			r.clients[client] = true
-			r.tracer.Trace("A client joined the room")
+			r.tracer.Trace("A client joined the room: ", client.userData["name"])
 		case client := <-r.leave:
 			// leaving client
 			delete(r.clients, client)
 			close(client.send)
-			r.tracer.Trace("A client left the room")
+			r.tracer.Trace("A client left the room: ", client.userData["name"])
 		case msg := <-r.forward:
 			// message received, forward to all clients
-			r.tracer.Trace("A message forwarded to all clients, msg: ", string(msg))
+			r.tracer.Trace("A message forwarded to all clients, msg: ", msg.Message)
 			for client := range r.clients {
 				client.send <- msg
 			}
@@ -51,7 +53,13 @@ func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		log.Fatal("room.ServeHTTP error: ", err)
 		return
 	}
-	client := newClient(socket, r)
+	authCookie, err := req.Cookie("auth")
+	if err != nil {
+		log.Fatal("Failed to get auth cookie:", err)
+		return
+	}
+
+	client := newClient(socket, r, objx.MustFromBase64(authCookie.Value))
 	defer func() { r.leave <- client }()
 
 	r.join <- client
@@ -60,7 +68,7 @@ func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 
 func newRoom() *room {
 	return &room{
-		forward: make(chan []byte),
+		forward: make(chan *message),
 		join:    make(chan *client),
 		leave:   make(chan *client),
 		clients: make(map[*client]bool),

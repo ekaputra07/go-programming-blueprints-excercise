@@ -11,9 +11,10 @@ import (
 )
 
 func render(filename string) http.HandlerFunc {
+	var tpl *template.Template
+	var once sync.Once
+
 	return func(w http.ResponseWriter, r *http.Request) {
-		var tpl *template.Template
-		var once sync.Once
 		once.Do(func() {
 			log.Printf("Loading template %s\n", filename)
 			tpl = template.Must(template.ParseFiles(filepath.Join("templates", filename)))
