@@ -11,10 +11,10 @@ import (
 
 func loginRequired(h http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		_, err := r.Cookie("auth")
+		cookie, err := r.Cookie("auth")
 
 		// not authenticated
-		if err == http.ErrNoCookie {
+		if err == http.ErrNoCookie || cookie.Value == "" {
 			w.Header().Set("Location", "/login")
 			w.WriteHeader(http.StatusTemporaryRedirect)
 			return
@@ -68,7 +68,8 @@ func handleLogin() http.HandlerFunc {
 				return
 			}
 			authCookieValue := objx.Map(map[string]interface{}{
-				"name": user.Name(),
+				"name":       user.Name(),
+				"avatar_url": user.AvatarURL(),
 			}).MustBase64()
 			http.SetCookie(w, &http.Cookie{
 				Name:  "auth",
@@ -81,5 +82,18 @@ func handleLogin() http.HandlerFunc {
 		default:
 			http.Error(w, fmt.Sprintf("Auth action %s not supported", action), http.StatusNotFound)
 		}
+	}
+}
+
+func logout(redirectURI string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		http.SetCookie(w, &http.Cookie{
+			Name:   "auth",
+			Value:  "", // clear the value
+			Path:   "/",
+			MaxAge: -1, // so browser will delete this cookie automatically
+		})
+		w.Header().Set("Location", redirectURI)
+		w.WriteHeader(http.StatusTemporaryRedirect)
 	}
 }

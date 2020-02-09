@@ -31,6 +31,7 @@ func main() {
 	router.HandleFunc("/chat", loginRequired(render("chat.html")))
 	router.HandleFunc("/login", render("login.html"))
 	router.HandleFunc("/auth/{action}/{provider}", handleLogin())
+	router.HandleFunc("/logout", logout("/chat"))
 	router.Handle("/room", r)
 
 	http.Handle("/", router)

@@ -2,33 +2,129 @@
 
 <head>
     <title>Chat</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css" type="text/css"
+        rel="stylesheet" />
+    <link href="//netdna.bootstrapcdn.com/bootstrap/3.0.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+
     <style>
-        input {
-            display: block;
+        .chat {
+            list-style: none;
+            margin: 0;
+            padding: 0;
         }
 
-        ul {
-            list-style: none;
+        .chat li {
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px dotted #B3A9A9;
+        }
+
+        .chat li.left .chat-body {
+            margin-left: 60px;
+        }
+
+        .chat li.right .chat-body {
+            margin-right: 60px;
+        }
+
+
+        .chat li .chat-body p {
+            margin: 0;
+            color: #777777;
+        }
+
+        .panel .slidedown .glyphicon,
+        .chat .glyphicon {
+            margin-right: 5px;
+        }
+
+        .panel-body {
+            overflow-y: scroll;
+            height: 500px;
+        }
+
+        ::-webkit-scrollbar-track {
+            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.3);
+            background-color: #F5F5F5;
+        }
+
+        ::-webkit-scrollbar {
+            width: 12px;
+            background-color: #F5F5F5;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            -webkit-box-shadow: inset 0 0 6px rgba(0, 0, 0, .3);
+            background-color: #555;
         }
     </style>
 </head>
 
 <body>
-    <ul id="messages"></ul>
-    <form id="chatbox">
-        {{.UserData.name}}:<br />
-        <textarea></textarea>
-        <input type="submit" value="Send" />
-    </form>
+    <div class="container" style="padding-top: 100px; padding-bottom: 100px;">
+        <div class="row">
+            <div class="col-md-12">
+                <div class="panel panel-primary">
+                    <div class="panel-heading">
+                        <span class="glyphicon glyphicon-comment"></span> GoChat - Logged in as {{.UserData.name}}
+                        <div class="btn-group pull-right">
+                            <button type="button" class="btn btn-default btn-xs dropdown-toggle" data-toggle="dropdown">
+                                <span class="glyphicon glyphicon-chevron-down"></span>
+                            </button>
+                            <ul class="dropdown-menu slidedown">
+                                <li><a href="/logout"><span class="glyphicon glyphicon-off"></span>
+                                        Sign Out</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="panel-body">
+                        <ul class="chat" id="messages">
+                        </ul>
+                    </div>
+                    <div class="panel-footer">
+                        <form id="chatbox">
+                            <div class="input-group">
+                                <input id="btn-input" type="text" class="form-control input-sm"
+                                    placeholder="Type your message here..." />
+                                <span class="input-group-btn">
+                                    <button class="btn btn-warning btn-sm" id="btn-submit">
+                                        Send</button>
+                                </span>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div>Chat template by <a href="https://bootsnipp.com/snippets/r1KW">https://bootsnipp.com/snippets/r1KW</a>
+        </div>
+    </div>
 </body>
-<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js">
+<script src="//ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<script src="//netdna.bootstrapcdn.com/bootstrap/3.0.0/js/bootstrap.min.js"></script>
+<script src="http://ajax.aspnetcdn.com/ajax/jquery.templates/beta1/jquery.tmpl.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js"></script>
+<script id="messageTpl" type="text/x-jquery-tmpl">
+    <li class="left clearfix">
+        <span class="chat-img pull-left">
+        <img src="${avatar_url}" alt="${name} Avatar" class="img-circle" width="40" height="40"/>
+        </span>
+        <div class="chat-body clearfix">
+            <div class="header">
+                <strong class="primary-font">${name}</strong> <small
+                    class="pull-right text-muted">
+                    <span class="glyphicon glyphicon-time"></span>${when}</small>
+            </div>
+            <p>${message}</p>
+        </div>
+    </li>
 </script>
 <script>
     $(function () {
         var socket = null;
-        var msgBox = $("#chatbox textarea");
-        var messages = $("#messages");
-        $("#chatbox").submit(function () {
+        var msgBox = $("#chatbox input");
+
+        $("#btn-submit").click(function () {
             if (!msgBox.val()) return false;
             if (!socket) {
                 alert("Error: There is no socket connection.");
@@ -43,18 +139,13 @@
         } else {
             socket = new WebSocket("ws://{{.Host}}/room");
             socket.onclose = function () {
-                messages.append($("<li>").text("Connection has been closed."));
+                alert("Connection has been closed.");
             }
             socket.onmessage = function (e) {
                 var msg = JSON.parse(e.data);
-                var time = Date.parse(msg.when);
-                messages.append(
-                    $("<li>").append(
-                        $("<strong>").text(msg.name + ": "),
-                        $("<span>").text(msg.message),
-                        $("<small>").text(" at " + new Date(time).toTimeString())
-                    )
-                );
+                console.log(msg);
+                msg["when"] = moment(msg.when).fromNow();
+                $("#messageTpl").tmpl(msg).appendTo("#messages");
             }
         }
     });
