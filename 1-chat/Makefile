@@ -5,4 +5,4 @@ build:
 	go build -o chat
 
 run:
-	go run *.go
+	go build -o chat && ./chat
