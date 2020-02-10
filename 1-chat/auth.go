@@ -70,6 +70,7 @@ func handleLogin() http.HandlerFunc {
 			authCookieValue := objx.Map(map[string]interface{}{
 				"name":       user.Name(),
 				"avatar_url": user.AvatarURL(),
+				"email":      user.Email(),
 			}).MustBase64()
 			http.SetCookie(w, &http.Cookie{
 				Name:  "auth",
